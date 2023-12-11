@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import bcrypt from 'bcryptjs';
+import session from "express-session";
 import crypto from 'node:crypto';
 
 const createPasswordDigest = async (password) => {
@@ -28,7 +29,7 @@ export const createNewUser = async (req, res, next) => {
         gameHistory: []
     });
     await newUser.save();
-    req.status(200).send(newUser.sessionToken);
+    res.status(200).send(newUser.sessionToken);
 };
 
 export const loginUser = async (req, res, next) => {

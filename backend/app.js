@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import session from 'express-session';
 import 'dotenv/config';
 import userRouter from "./routes/users.js";
+import gameRouter from "./routes/games.js";
 
 await mongoose.connect(process.env.MONGO_URI);
 
@@ -14,9 +15,6 @@ const port = 3000;
 app.use(bodyParser.json());
 app.use(cors());
 
-app.use('/api/users', userRouter);
-// app.use('/api/games', gameRouter);
-
 // Express Session Config
 app.use(session({
     secret: 'linkedin mastermind password',
@@ -24,6 +22,10 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: app.get('env') === 'production'}
 }));
+
+app.use('/api/users', userRouter);
+// app.use('/api/games', gameRouter);
+app.use('/api/games', gameRouter);
 
 // universal error handler
 app.use((error, req, res, next) => {

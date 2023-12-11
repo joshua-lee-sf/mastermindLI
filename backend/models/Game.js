@@ -12,9 +12,7 @@ const gameSchema = new Schema({
     },
     masterCode: {
         type: String,
-        of: Number,
         required: true,
-        max: 4,
     },
     previousGuesses: {
         type: Array,
