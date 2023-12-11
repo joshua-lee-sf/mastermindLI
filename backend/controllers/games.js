@@ -10,17 +10,17 @@ const isValidGuess = (guess) => {
     for (let i = 0; i < guess.length; i++) {
         if (!numberString.includes(guess[i])) {
             return new Error('inValid Guess');
-        }
-    }
+        };
+    };
 
     return true;
 };
 
-const createMasterCode = async () => {
-    const res = await fetch('https://www.random.org/integers/?num=4&min=1&max=6&col=1&base=10&format=plain&rnd=new')
+const createMasterCode = async (num=4) => {
+    const res = await fetch(`https://www.random.org/integers/?num=${num}&min=1&max=6&col=1&base=10&format=plain&rnd=new`);
     const data = await res.text();
     const masterCode = data.replace(/\n/g, "");
-    return masterCode
+    return masterCode;
 };
 
 const isWon = (guess, masterCode) => {
@@ -59,18 +59,19 @@ const numExactMatches = (guess, masterGuess) => {
     for (let i = 0; i < guess.length; i++) {
         if (guess[i].toUpperCase() === masterGuess[i].toUpperCase()) {
             count++;
-        }
+        };
     };
     return count;
 };
 
 export const createNewGame = async (req, res, next) => {
     const user = await User.findOne({sessionToken: req.body.sessionToken});
+    const codeLength = req.body.codeLength;
 
     if (user) {
         const newGame = new Game({
             completedGame: false,
-            masterCode: await createMasterCode(),
+            masterCode: await createMasterCode(codeLength),
             player: user.id,
             previousGuesses: [],
             attemptsLeft: 10,
@@ -89,7 +90,7 @@ export const createNewGame = async (req, res, next) => {
         }
     } else {
         next(new Error('Unable to locate user'));
-    }
+    };
 };
 
 export const checkGuess = async (req, res, next) => {
