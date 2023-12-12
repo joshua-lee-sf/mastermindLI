@@ -36,14 +36,16 @@ export const loginUser = async (req, res, next) => {
     if (await isPassword(req.body.username, req.body.password)) {
         // testing user
         const user = await User.findOne({username: req.body.username});
-        
-        req.session.regenerate(function (err) {
+
+        req.session.regenerate(async function (err) {
             if (err) next(err)
             req.session.user = req.body.username
             req.session.save(function (err) {
                 if (err) return next(err)
                 res.json(user.sessionToken);
             })
+            user.sessionToken = await generateSessionToken();
+            user.save();
         });
     } else {
         next(new Error('Invalid credentials'))

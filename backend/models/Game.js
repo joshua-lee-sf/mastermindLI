@@ -18,8 +18,9 @@ const gameSchema = new Schema({
         type: Array,
         of: String,
     },
-    player: {
-        type: Schema.ObjectId,
+    players: {
+        type: Array,
+        of: Schema.ObjectId,
         ref: 'User',
     },
 }, {

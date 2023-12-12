@@ -3,8 +3,8 @@ import Game from "../models/Game.js";
 import _ from 'lodash';
 import { getCurrentUser } from "./users.js";
 
-const isValidGuess = (guess) => {
-    if (guess.length > 4) return new Error('inValid Guess');
+const isValidGuess = (guess, masterCode) => {
+    if (guess.length !== masterCode.length) return new Error('inValid Guess');
     let numberString = '01234567';
 
     for (let i = 0; i < guess.length; i++) {
@@ -72,7 +72,7 @@ export const createNewGame = async (req, res, next) => {
         const newGame = new Game({
             completedGame: false,
             masterCode: await createMasterCode(codeLength),
-            player: user.id,
+            players: [user.id],
             previousGuesses: [],
             attemptsLeft: 10,
         });
@@ -83,8 +83,8 @@ export const createNewGame = async (req, res, next) => {
             await user.save();
             res.status(200).json({
                 success: true,
-                data: newGame,
-            })
+                data: newGame.id,
+            });
         } else {
             next(new Error('Unable to create Game'));
         }
@@ -96,7 +96,7 @@ export const createNewGame = async (req, res, next) => {
 export const checkGuess = async (req, res, next) => {
     const guess = req.body.guess;
     const currentGame = await Game.findOne({_id: req.body.game});
-    const validGuess = isValidGuess(guess);
+    const validGuess = isValidGuess(guess, currentGame.masterCode);
     const alreadyGeussed = currentGame.previousGuesses.includes(guess);
 
     if (alreadyGeussed) {
@@ -187,5 +187,49 @@ export const getAllGames = async (req, res, next) => {
         });
     } else {
         next( new Error('Could not find user'));
+    };
+};
+
+// WEBSOCKET FUNCTIONS
+
+export const webSocketCreateGame = async (sessionToken, masterCode) => {
+    const user = await User.findOne({sessionToken});
+
+    if (!user) throw new Error ('User not found');
+
+    const newGame = new Game({
+        completedGame: false,
+        masterCode,
+        players: [user.id],
+        previousGuesses: [],
+        attemptsLeft: 10,
+    });
+
+    user.gameHistory.push(newGame.id);
+    await user.save();
+    await newGame.save();
+};
+
+export const webSocketCheckGuess = async (guess, gameId, sessionToken) => {
+    const user = await User.findOne({sessionToken});
+    const game = await Game.findById(gameId);
+
+    if (!game.players.includes(user.id)) game.players.push(user.id);
+    const masterCode = game.masterCode;
+
+    if (game.attemptsLeft > 0 && isValidGuess(guess, masterCode)) {
+        const exactMatches = numExactMatches(guess, masterCode);
+        const nearMatches = numNearMatches(guess, masterCode);
+        if (exactMatches !== masterCode.length) {
+            game.previousGuesses.push(guess);
+            game.attemptsLeft -= 1;
+            await game.save();
+            return [exactMatches, nearMatches];
+        } else {
+            game.completedGame = true;
+            await game.save();
+        }
+    } else {
+        throw new Error ('Cannot check guess');
     };
 };
