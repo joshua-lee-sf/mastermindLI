@@ -50,7 +50,6 @@ wss.on('connection', function connection(ws) {
     ws.send('Welcome New Client');
 
     ws.on('message', incomingMessage.bind(null, ws));
-    ws.
     
     Party.creatingParty(ws);
 });

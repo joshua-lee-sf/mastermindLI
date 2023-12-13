@@ -26,7 +26,11 @@ export const createNewUser = async (req, res, next) => {
         username: req.body.username,
         passwordDigest: await createPasswordDigest(req.body.password),
         sessionToken: await generateSessionToken(),
-        gameHistory: []
+        gameHistory: [],
+        score: {
+            wins: 0,
+            losses: 0,
+        }
     });
     await newUser.save();
     res.status(200).send(newUser.sessionToken);
@@ -42,10 +46,10 @@ export const loginUser = async (req, res, next) => {
             req.session.user = req.body.username
             req.session.save(function (err) {
                 if (err) return next(err)
-                res.json(user.sessionToken);
             })
             user.sessionToken = await generateSessionToken();
             user.save();
+            res.json(user.sessionToken);
         });
     } else {
         next(new Error('Invalid credentials'))

@@ -18,7 +18,17 @@ const userSchema = new Schema({
     gameHistory: [{
         type: Schema.Types.ObjectId,
         ref: 'Game'
-    }]
+    }],
+    score:{
+        wins: {
+            type: Number,
+            required: true,
+        },
+        losses:{
+            type: Number,
+            required: true,
+        }
+    }
 }, {
     timestamps: true
 });
