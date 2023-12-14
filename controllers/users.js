@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from 'bcryptjs';
 import session from "express-session";
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 
 const createPasswordDigest = async (password) => {
     const salt = await bcrypt.genSalt();
@@ -46,22 +46,24 @@ export const loginUser = async (req, res, next) => {
             req.session.user = req.body.username
             req.session.save(function (err) {
                 if (err) return next(err)
-            })
+            });
             user.sessionToken = await generateSessionToken();
             user.save();
             res.json(user.sessionToken);
         });
     } else {
-        next(new Error('Invalid credentials'))
-    }
+        next(new Error('Invalid credentials'));
+    };
 };
 
-export const getCurrentUser = async (username) => {
-    let user = await User.findOne({username: username});
-    if (user) {
-        return user
+export const getCurrentUser = async (req, res, next) => {
+    const token = req.query.sessionToken;
+    let user = await User.findOne({sessionToken: token});
+    
+    if (!user) {
+        next(new Error('Could not find user'));
     } else {
-        throw new Error('Could not find user');
+        res.status(200).send(JSON.stringify(user));
     };
 };
 

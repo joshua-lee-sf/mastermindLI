@@ -29,7 +29,5 @@ export default class Party {
             const newParty = new this(player1, player2);
             this.parties[newParty.partyId] = newParty; 
         };
-        console.log(queue);
-        console.log(this.parties);
     };
 };

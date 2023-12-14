@@ -12,9 +12,12 @@ const gameSchema = new Schema({
     },
     masterCode: {
         type: String,
+        maxlength: 10,
+        minlength: 2,
         required: true,
     },
     previousGuesses: {
+        // guess, near matches, exact matches
         type: Array,
         of: String,
     },

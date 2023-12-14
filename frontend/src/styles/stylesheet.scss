@@ -1,0 +1,51 @@
+body{
+    nav{
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        
+        h1{
+            font-size: 2rem;
+        }
+        
+    
+        #nav-right{
+    
+            button:hover {
+                cursor: pointer;
+            }
+    
+            padding-top: 0.5rem;
+            display: grid;
+            grid-template-columns: 150px 150px;
+            grid-template-rows: 30px 30px;
+            grid-row: auto auto;
+            grid-row-gap: 0.5rem;
+            grid-column-gap: 0.5rem;
+    
+            div{
+                display: flex;
+                flex-direction: column;
+    
+                p, button{
+                    margin: 0.3rem;
+                }
+            }
+        }
+    }
+
+    #game-options-div{
+        display:flex;
+        flex-direction: column;
+        margin: 1rem;
+
+        input{
+            margin-left: 0.5rem;
+        }
+
+        button{
+            width: 6rem;
+            margin-top: 1rem;
+        }
+    }
+}

@@ -9,8 +9,10 @@ const isValidGuess = (guess, masterCode) => {
     return !!(guess.match(/^[0-7]+$/));
 };
 
-const createMasterCode = async (num=4) => {
-    const res = await fetch(`https://www.random.org/integers/?num=${num}&min=1&max=6&col=1&base=10&format=plain&rnd=new`);
+
+
+const createMasterCode = async (codeLength=4) => {
+    const res = await fetch(`https://www.random.org/integers/?num=${codeLength}&min=1&max=6&col=1&base=10&format=plain&rnd=new`);
     const data = await res.text();
     const masterCode = data.replace(/\n/g, "");
     return masterCode;
@@ -87,10 +89,13 @@ export const createNewGame = async (req, res, next) => {
 };
 
 export const checkGuess = async (req, res, next) => {
-    const guess = req.body.guess;
-    const currentGame = await Game.findOne({_id: req.body.game});
+    const {guess, sessionToken, game} = req.body;
+    const user = await User.findOne({sessionToken});
+    const currentGame = await Game.findById(game);
     const validGuess = isValidGuess(guess, currentGame.masterCode);
-    const alreadyGeussed = currentGame.previousGuesses.includes(guess);
+    const guessArray = alreadyGuessedCode(currentGame.previousGuesses, guess);
+    console.log(guessArray);
+    const alreadyGeussed = guessArray.includes(guess);
 
     if (alreadyGeussed) {
         next(new Error ('Code has been tried before'));
@@ -104,27 +109,42 @@ export const checkGuess = async (req, res, next) => {
         const masterCode = currentGame.masterCode;
         const nearMatches = numNearMatches(guess, masterCode);
         const exactMatches = numExactMatches(guess, masterCode);
-        currentGame.previousGuesses.push(guess);
+        currentGame.previousGuesses.push(`Guess: ${guess}, Exact Matches: ${exactMatches}, Near Matches: ${nearMatches}`);
+        
         if (isWon(guess, masterCode)) {
-            currentGame.completedGame = true
+            currentGame.completedGame = true;
+            user.score.wins += 1;
+            await user.save();
             await currentGame.save();
+
             res.status(200).send({
                 message: 'You have won the game!',
                 game: currentGame
             });
-        } else {
+        }
+        
+        currentGame.attemptsLeft -= 1;
+        const attemptsLeft = currentGame.attemptsLeft;
+
+
+        if (currentGame.attemptsLeft === 0) {
+            currentGame.completedGame = true;
+            user.score.losses += 1;
+            await user.save();
+            res.status(200).json({
+                success: true,
+                game: currentGame._id,
+                message: 'Sorry you have lost the game',
+            })
+        } else if (!currentGame.completedGame){
             res.status(200).json({
                 success:true,
                 game: currentGame._id,
                 guess: guess,
+                attemptsLeft: attemptsLeft,
                 nearMatches: nearMatches,
-                exactMatches: exactMatches
+                exactMatches: exactMatches,
             });
-        };
-        currentGame.attemptsLeft -= 1;
-
-        if (currentGame.attemptsLeft === 0) {
-            currentGame.completedGame = true;
         };
         
         await currentGame.save();
@@ -133,10 +153,13 @@ export const checkGuess = async (req, res, next) => {
     }
 };
 
-const lostGame = (game) => {
-    if (game.attemptsLeft === 0) {
-        game.completedGame = true;
-    };
+const alreadyGuessedCode = (guessStringArray, guess) => {
+    const guessLength = guess.length;
+    const guessCodeArray = [];
+    guessStringArray.forEach((guessString) => {
+        guessCodeArray.push(guessString.slice(7, guessLength + 7));
+    })
+    return guessCodeArray;
 };
 
 export const endGameEarly = async (req,res,next) => {
@@ -155,13 +178,14 @@ export const endGameEarly = async (req,res,next) => {
 };
 
 export const getMostRecentGame = async(req,res,next) => {
-    const user = await User.findOne({sessionToken: req.body.sessionToken});
+    const user = await User.findOne({sessionToken: req.query.sessionToken});
 
     if (user) {
         const mostRecentGameIndex = user.gameHistory.length - 1
         const mostRecentGameId = user.gameHistory[mostRecentGameIndex];
         const mostRecentGame = await Game.findById(mostRecentGameId);
         const {id, completedGame, previousGuesses, attemptsLeft} = mostRecentGame;
+        const masterCodeLength = mostRecentGame.masterCode.length;
 
         if (mostRecentGame) {
             res.status(200).json({
@@ -169,17 +193,37 @@ export const getMostRecentGame = async(req,res,next) => {
                 completedGame, 
                 previousGuesses,
                 attemptsLeft,
+                masterCodeLength,
             })
         } else {
-            next(new Error('Could not Find game'));
+            next(new Error('Could not find game'));
         }
     } else {
-        next(new Error('Count not find user'))
+        next(new Error('Could not find user'))
     }
 };
 
+export const getCurrentGame = async (req, res, next) => {
+    const gameId = req.query.gameId;
+    const game = await Game.findById(gameId);
+    const masterCodeLength = game.masterCode.length;
+
+    
+    if (game) {
+        const {completedGame, attemptsLeft, previousGuesses} = game
+        res.json({
+            completedGame,
+            attemptsLeft,
+            previousGuesses,
+            masterCodeLength
+        });
+    } else {
+        next(new Error ('Could not continue game'));
+    }
+}
+
 export const getAllGames = async (req, res, next) => {
-    const user = await getCurrentUser(req.session.user);
+    const user = await getCurrentUser(req.body.sessionToken);
 
     if (user) {
         const gamesArray = await Game.find({
