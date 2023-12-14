@@ -19,7 +19,7 @@ Welcome to my mastermind project! I'm incredibly proud of this project and would
 2. Install dependencies for both frontend and backend directories: 
 ```cd frontend npm install```
 ```cd .. backend npm install```
-3. Change to backend Directory and run: ```npm run start```
+3. Run: ```npm run start``` from root directory
 4. Change to frontend directory and run: ```npm run watch```
 5. Play the game!
 
