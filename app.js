@@ -18,8 +18,6 @@ const port = 3000;
 app.use(bodyParser.json());
 app.use(cors());
 
-
-
 // Express Session Config
 app.use(session({
     secret: 'linkedin mastermind password',
@@ -27,6 +25,9 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: app.get('env') === 'production'}
 }));
+
+app.use('/dist', Express.static('frontend/dist'));
+app.use('/', Express.static('frontend/public'));
 
 app.use('/api/users', userRouter);
 // app.use('/api/games', gameRouter);
@@ -46,10 +47,15 @@ const wss = new WebSocketServer({server});
 
 wss.on('connection', function connection(ws) {
     console.log('A new client Connected!');
-
-    ws.send('Welcome New Client');
-
+    // ws.send('Welcome New Client');
     ws.on('message', incomingMessage.bind(null, ws));
     
-    Party.creatingParty(ws);
+    const party = Party.creatingParty(ws);
+
+    ws.on('close', () => {
+        const index = Party.partyJoiningQueue.indexOf(ws);
+        if (index > -1) {
+            Party.partyJoiningQueue.splice(index, 1)
+        }; 
+    });
 });

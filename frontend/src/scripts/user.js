@@ -1,5 +1,5 @@
 export const createUser = async (username, password) => {
-    let res = await fetch('http://localhost:3000/api/users/register', {
+    let res = await fetch('/api/users/register', {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -14,12 +14,13 @@ export const createUser = async (username, password) => {
         localStorage.setItem('sessionToken', data);
         location.reload();
     } else {
-        let data = await res.json();
+        const {error} = await res.json()
+        throw new Error(error);
     };
 };
 
 export const loginUser = async (username, password) => {
-    let res = await fetch('http://localhost:3000/api/users/login', {
+    let res = await fetch('/api/users/login', {
         method: "POST",
         body: JSON.stringify({
             username,
@@ -29,17 +30,18 @@ export const loginUser = async (username, password) => {
             "Content-Type": 'application/json'
         }
     });
-    if (res.ok) {
+    if (!res.ok) {
+        const {error} = await res.json();
+        throw new Error (error);
+    } else {
         const sessionToken = await res.json();
         localStorage.setItem('sessionToken', sessionToken);
         location.reload();
-    } else {
-        let data = await res.json();
-    }
+    };
 };
 
 export const getCurrentUser = async (sessionToken) => {
-    let res = await fetch(`http://localhost:3000/api/users/getcurrentuser?sessionToken=${encodeURIComponent(sessionToken)}`, {
+    let res = await fetch(`/api/users/getcurrentuser?sessionToken=${encodeURIComponent(sessionToken)}`, {
         method: 'GET',
     });
     let data = await res.json();

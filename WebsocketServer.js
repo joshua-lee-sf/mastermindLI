@@ -1,5 +1,6 @@
 import Party from './Party.js';
-import { webSocketCodeMasterAnalyze, webSocketSendGuess } from './controllers/games.js';
+import User from './models/User.js';
+import { webSocketCodeMasterAnalyze } from './controllers/games.js';
 
 export const incomingMessage = (ws, message) => {
     const parsedMessage = JSON.parse(message);
@@ -21,6 +22,12 @@ export const incomingMessage = (ws, message) => {
         case 'checkGuess':
             checkGuess(ws, parsedMessage.payload);
             break;
+        case 'notifyCodeMaster':
+            notifyCodeMaster(ws);
+            break;
+        case 'notifyCodeBreaker':
+            notifyCodeBreaker();
+            break;
         default:
             ws.send(JSON.stringify({
                 error: 'Invalid Message Type'
@@ -39,10 +46,41 @@ const sendGuess = async (ws, payload) => {
         }));
     };
 
-    const {guess, gameId, sessionToken} = payload;
+    const {guess, gameId, sessionToken, partyId} = payload;
 
-    const data = await webSocketSendGuess(guess, gameId, sessionToken);
-    ws.send(JSON.stringify(data));
+    const game = await game.findById(gameId);
+    const user = await User.findOne({sessionToken});
+
+    const {codeMaster} = Party.parties[partyId];
+
+    if (!game.players.includes(user.id)) game.players.push(user.id);
+    
+    codeMaster.send(JSON.stringify({
+        type: 'sendGuess',
+        payload: {
+            guess
+        }
+    }));
+};
+
+const notifyCodeMaster = (ws) => {
+    if (typeof payload !== 'object') {
+        ws.send(JSON.stringify({
+            error: 'Not an object!'
+        }));
+    };
+
+    ws.send(payload);
+};
+
+const notifyCodeBreaker = (ws, payload) => {
+    if (typeof payload !== 'object') {
+        ws.send(JSON.stringify({
+            error: 'Not an object!'
+        }));
+    };
+
+    ws.send(payload);
 };
 
 const checkGuess = async (ws, payload) => {
@@ -59,6 +97,7 @@ const checkGuess = async (ws, payload) => {
         humanExactMatches, 
         humanNearMatches
     } = payload;
+    
     const data = 
     await webSocketCodeMasterAnalyze(
         gameId, 
@@ -67,21 +106,15 @@ const checkGuess = async (ws, payload) => {
         humanExactMatches, 
         humanNearMatches
     );
-    console.log(data)
+
+    // make sure to send to other client
     ws.send(JSON.stringify(data));
-}
+};
 
-// const createGame = async (ws, payload) => {
-//     if (typeof payload !== 'object') {
-//         ws.send(JSON.stringify({
-//             error: 'Not an object!'
-//         }));
-//     };
-    
-//     const {sessionToken, masterCode} = payload;
-
-//     await webSocketCreateGame(sessionToken, masterCode);
-//     ws.send()
-// };
-
-
+export const roleDelivery = async (ws, payload)  => {
+    if (typeof payload !== 'object') {
+        ws.send(JSON.stringify({
+            error: 'Not an object!'
+        }));
+    };
+};

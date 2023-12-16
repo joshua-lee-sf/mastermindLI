@@ -1,19 +1,21 @@
 import { getCurrentGame } from "../../../controllers/games";
 
-export const startNewGame = async (sessionToken, codeLength=4) => {
+export const startNewGame = async (sessionToken, codeLength, masterCode, partyId) => {
     try{
-        const res = await fetch('http://localhost:3000/api/games/newgame', {
+        const res = await fetch('/api/games/newgame', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 sessionToken,
-                codeLength
+                codeLength,
+                masterCode,
+                partyId
             })
         });
         if (!res.ok) {
-            throw new Error('Faled to start the game');
+            return new Error('Faled to start the game');
         };
         const data = await res.json();
         return data;
@@ -23,7 +25,7 @@ export const startNewGame = async (sessionToken, codeLength=4) => {
 };
 
 export const getGame = async (gameId) => {
-    const res = await fetch(`http://localhost:3000/api/games/getcurrentgame?gameId=${gameId}`);
+    const res = await fetch(`/api/games/getcurrentgame?gameId=${gameId}`);
     if (!res.ok) {
         throw new Error('could not find game');
     };
@@ -33,7 +35,7 @@ export const getGame = async (gameId) => {
 };
 
 export const getMostRecentGame = async (sessionToken) => {
-    const res = await fetch(`http://localhost:3000/api/games/mostrecentgame?sessionToken=${sessionToken}`);
+    const res = await fetch(`/api/games/mostrecentgame?sessionToken=${sessionToken}`);
 
     if (!res.ok) {
         throw new Error('Could not continue previous game');
@@ -44,7 +46,7 @@ export const getMostRecentGame = async (sessionToken) => {
 };
 
 export const checkGuess = async (guess, sessionToken, game) => {
-    const res = await fetch('http://localhost:3000/api/games/checkguess', {
+    const res = await fetch('/api/games/checkguess', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -57,10 +59,31 @@ export const checkGuess = async (guess, sessionToken, game) => {
     });
     
     if (!res.ok) {
-        throw new Error('Could not check guess');
+        const {error} = await res.json();
+        throw new Error(error);
     }
 
     const data = await res.json();
     return data;
 };
 
+export const updateGameHistory = async (gameId, sessionToken) => {
+    const res = await fetch('/api/games/updategamehistory', {
+        method: 'POST',
+        body: JSON.stringify({
+            gameId,
+            sessionToken
+        }),
+        headers: {
+            'content-type': 'application/json'
+        }
+    });
+
+    if (!res.ok) {
+        const {error} = await res.json();
+        throw new Error(error);
+    };
+
+    const data = await res.json();
+    return data;
+};
