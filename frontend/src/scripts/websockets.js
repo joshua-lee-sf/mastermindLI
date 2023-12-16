@@ -1,4 +1,4 @@
-import { startNewGame, updateGameHistory } from "./game";
+import { checkGuess, startNewGame, updateGameHistory } from "./game.js";
 
 export const incomingMessage = (event) => {
     const parsedMessage = JSON.parse(event.data);
@@ -14,6 +14,9 @@ export const incomingMessage = (event) => {
             break;
         case 'sendGameId':
             sendGameId(parsedMessage.payload);
+            break;
+        case 'sendGuess':
+            receiveGuess(parsedMessage.payload);
             break;
         default:
             console.log('Default case');
@@ -71,6 +74,32 @@ const sendGameId = async (payload) => {
     location.reload();
 };
 
-const sendGuess = async (payload) => {
-    const {guess} = payload;
+const receiveGuess = async (payload) => {
+    const {
+        guess, 
+        gameId, 
+        sessionToken,
+        partyId
+    } = payload;
+
+    
+    const codeMasterDiv = document.getElementById('codemaster-div');
+    codeMasterDiv.style.display = 'block';
+
+    const nearMatchesInput = document.getElementById('near-matches');
+    const exactMatchesInput = document.getElementById('exact-matches');
+    const nearMatchesValue = parseInt(nearMatchesInput.value);
+    const exactMatchesValue = parseInt(exactMatchesInput.value);
+
+    const submitResponseButton = document.getElementById('submit-multiplayer-response-button');
+
+    submitResponseButton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await checkGuess(guess, sessionToken, gameId, partyId,exactMatchesValue, nearMatchesValue);
+    })
 };
+
+const receiveResponse = async (payload) => {
+
+}
+

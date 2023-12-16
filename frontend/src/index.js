@@ -80,7 +80,7 @@ if (!sessionToken) {
 
     logoutButton.addEventListener('click', () => {
         try {
-            localStorage.removeItem('sessionToken');
+            localStorage.clear();
             location.reload();
         } catch (error) {
             errorMessage.textContent = error.message;
@@ -182,6 +182,7 @@ if (!gameId && sessionToken ) {
             }
         } else {
             const partyId = localStorage.getItem('partyId')
+            
             socket.send(JSON.stringify({
                 type:'sendGuess',
                 payload: {
@@ -213,3 +214,4 @@ if (!gameId && sessionToken ) {
         location.reload();
     });
 };
+

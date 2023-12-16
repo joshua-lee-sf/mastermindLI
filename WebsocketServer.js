@@ -1,6 +1,5 @@
 import Party from './Party.js';
 import User from './models/User.js';
-import { webSocketCodeMasterAnalyze } from './controllers/games.js';
 
 export const incomingMessage = (ws, message) => {
     const parsedMessage = JSON.parse(message);
@@ -63,6 +62,8 @@ const sendGuess = async (ws, payload) => {
     }));
 };
 
+
+
 const notifyCodeMaster = (ws) => {
     if (typeof payload !== 'object') {
         ws.send(JSON.stringify({
@@ -83,33 +84,33 @@ const notifyCodeBreaker = (ws, payload) => {
     ws.send(payload);
 };
 
-const checkGuess = async (ws, payload) => {
-    if (typeof payload !== 'object') {
-        ws.send(JSON.stringify({
-            error: 'Not an object!'
-        }));
-    };
+// const checkGuess = async (ws, payload) => {
+//     if (typeof payload !== 'object') {
+//         ws.send(JSON.stringify({
+//             error: 'Not an object!'
+//         }));
+//     };
 
-    const {
-        gameId, 
-        guess, 
-        sessionToken, 
-        humanExactMatches, 
-        humanNearMatches
-    } = payload;
+//     const {
+//         gameId, 
+//         guess, 
+//         sessionToken, 
+//         humanExactMatches, 
+//         humanNearMatches
+//     } = payload;
     
-    const data = 
-    await webSocketCodeMasterAnalyze(
-        gameId, 
-        guess, 
-        sessionToken, 
-        humanExactMatches, 
-        humanNearMatches
-    );
+//     const data = 
+//     await webSocketCodeMasterAnalyze(
+//         gameId, 
+//         guess, 
+//         sessionToken, 
+//         humanExactMatches, 
+//         humanNearMatches
+//     );
 
-    // make sure to send to other client
-    ws.send(JSON.stringify(data));
-};
+//     // make sure to send to other client
+//     ws.send(JSON.stringify(data));
+// };
 
 export const roleDelivery = async (ws, payload)  => {
     if (typeof payload !== 'object') {

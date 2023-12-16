@@ -18,6 +18,15 @@ export const startNewGame = async (sessionToken, codeLength, masterCode, partyId
             return new Error('Faled to start the game');
         };
         const data = await res.json();
+        const waitingMessage = document.getElementById('waiting-message');
+        waitingMessage.textContent = 'Waiting for other player...';
+    
+        const roleAssignmentElement = document.getElementById('role-assignment');
+        const masterCodeInputElement = document.getElementById('mastercode-input');
+        const submitMasterCodeButtonElement = document.getElementById('submit-mastercode-button');
+        roleAssignmentElement.style.display = 'none';
+        masterCodeInputElement.style.display = 'none';
+        submitMasterCodeButtonElement.style.display = 'none';
         return data;
     } catch (err) {
         console.error('Error', err.message);
@@ -45,18 +54,35 @@ export const getMostRecentGame = async (sessionToken) => {
     return data;
 };
 
-export const checkGuess = async (guess, sessionToken, game) => {
-    const res = await fetch('/api/games/checkguess', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            guess,
-            sessionToken,
-            game,
-        })
-    });
+export const checkGuess = async (guess, sessionToken, game, partyId, humanExactMatches, humanNearMatches) => {
+    if (partyId) {
+        const res = await fetch('/api/games/checkguess', {
+            method: 'POST',
+            headers:{
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                guess,
+                sessionToken,
+                game,
+                partyId,
+                humanExactMatches,
+                humanNearMatches,
+            })
+        });
+    } else {
+        const res = await fetch('/api/games/checkguess', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                guess,
+                sessionToken,
+                game,
+            })
+        });
+    }
     
     if (!res.ok) {
         const {error} = await res.json();

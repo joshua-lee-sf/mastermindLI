@@ -30,7 +30,6 @@ app.use('/dist', Express.static('frontend/dist'));
 app.use('/', Express.static('frontend/public'));
 
 app.use('/api/users', userRouter);
-// app.use('/api/games', gameRouter);
 app.use('/api/games', gameRouter);
 
 // universal error handler

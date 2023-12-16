@@ -3,14 +3,13 @@ import Game from "../models/Game.js";
 import Party from "../Party.js";
 import _ from 'lodash';
 import { getCurrentUser } from "./users.js";
+import { parse } from "path";
 
 const isValidGuess = (guess, masterCode) => {
     if (guess.length !== masterCode.length) return new Error('Guess is invalid');
 
     return !!(guess.match(/^[1-6]+$/));
 };
-
-
 
 const createMasterCode = async (codeLength=4) => {
     const res = await fetch(`https://www.random.org/integers/?num=${codeLength}&min=1&max=6&col=1&base=10&format=plain&rnd=new`);
@@ -80,7 +79,7 @@ export const createNewGame = async (req, res, next) => {
 
             if (partyId) {
                 const {codeBreaker} = Party.parties[partyId];
-                
+
                 codeBreaker.send(JSON.stringify({
                     type: 'sendGameId',
                     payload: {
@@ -101,67 +100,139 @@ export const createNewGame = async (req, res, next) => {
 };
 
 export const checkGuess = async (req, res, next) => {
-    const {guess, sessionToken, game} = req.body;
+    const {guess, sessionToken, game, partyId} = req.body;
     const user = await User.findOne({sessionToken});
     const currentGame = await Game.findById(game);
+    const masterCode = currentGame.masterCode;
     const validGuess = isValidGuess(guess, currentGame.masterCode);
     const guessArray = alreadyGuessedCode(currentGame.previousGuesses, guess);
     const alreadyGuessed = guessArray.includes(guess);
-
-    if (alreadyGuessed) {
-        next(new Error ('Code has been tried before'));
-    }
-
-    if (currentGame.completedGame) {
-        next(new Error('Game is already completed'));
-    };
     
-    if (currentGame && (validGuess === true) && currentGame.attemptsLeft > 0 && !alreadyGuessed) {
-        const masterCode = currentGame.masterCode;
-        const nearMatches = numNearMatches(guess, masterCode);
-        const exactMatches = numExactMatches(guess, masterCode);
-        currentGame.previousGuesses.push(`Guess: ${guess}, Exact Matches: ${exactMatches}, Near Matches: ${nearMatches}`);
+    if (!partyId) {
         
-        if (isWon(guess, masterCode)) {
-            currentGame.completedGame = true;
-            user.score.wins += 1;
-            await user.save();
-            await currentGame.save();
 
-            res.status(200).send({
-                message: 'You have won the game!',
-                game: currentGame
-            });
+        if (alreadyGuessed) {
+            next(new Error ('Code has been tried before'));
         }
-        
-        currentGame.attemptsLeft -= 1;
-        const attemptsLeft = currentGame.attemptsLeft;
-
-
-        if (currentGame.attemptsLeft === 0) {
-            currentGame.completedGame = true;
-            user.score.losses += 1;
-            await user.save();
-            res.status(200).json({
-                success: true,
-                game: currentGame._id,
-                message: 'Sorry you have lost the game',
-            })
-        } else if (!currentGame.completedGame){
-            res.status(200).json({
-                success:true,
-                game: currentGame._id,
-                guess: guess,
-                attemptsLeft: attemptsLeft,
-                nearMatches: nearMatches,
-                exactMatches: exactMatches,
-            });
+    
+        if (currentGame.completedGame) {
+            next(new Error('Game is already completed'));
         };
         
+        if (currentGame && (validGuess === true) && currentGame.attemptsLeft > 0 && !alreadyGuessed) {
+            const masterCode = currentGame.masterCode;
+            const nearMatches = numNearMatches(guess, masterCode);
+            const exactMatches = numExactMatches(guess, masterCode);
+            currentGame.previousGuesses.push(`Guess: ${guess}, Exact Matches: ${exactMatches}, Near Matches: ${nearMatches}`);
+            
+            if (isWon(guess, masterCode)) {
+                currentGame.completedGame = true;
+                user.score.wins += 1;
+    
+                res.status(200).send({
+                    message: 'You have won the game!',
+                    game: currentGame
+                });
+            }
+            
+            currentGame.attemptsLeft -= 1;
+            const attemptsLeft = currentGame.attemptsLeft;
+
+            if (currentGame.attemptsLeft === 0) {
+                currentGame.completedGame = true;
+                user.score.losses += 1;
+                
+                res.status(200).json({
+                    success: true,
+                    game: currentGame._id,
+                    message: 'Sorry you have lost the game',
+                })
+            } else if (!currentGame.completedGame){
+                res.status(200).json({
+                    success:true,
+                    game: currentGame._id,
+                    guess: guess,
+                    attemptsLeft: attemptsLeft,
+                    nearMatches: nearMatches,
+                    exactMatches: exactMatches,
+                });
+            };
+            
+        } else {
+            next( validGuess ? validGuess : new Error('Guess is out of bounds'));
+        }
         await currentGame.save();
+        await user.save();
     } else {
-        next( validGuess ? validGuess : new Error('Guess is out of bounds'));
-    }
+        const {humanNearMatches, humanExactMatches} = req.body;
+        const parsedExactMatches = parseInt(humanExactMatches);
+        const parsedNearMatches = parseInt(humanNearMatches);
+
+        const {codeBreaker} = Party.parties[partyId];
+
+        if (currentGame.attemptsLeft === 0 || !isValidGuess(guess, masterCode) || currentGame.completedGame || alreadyGuessed) {
+            next(new Error('Could not check guess'));
+            return;
+        };
+        
+        const computerExactMatches = numExactMatches(guess, masterCode);
+        const computerNearMatches = numNearMatches(guess, masterCode);
+        
+        const comparator = computerAnalyzer(
+            parsedNearMatches, parsedExactMatches,
+            computerNearMatches,computerExactMatches
+        );
+    
+        if (!comparator) {
+            next(new Error('Human has analyzed incorrectly. Please try again.'))
+            return;
+        };
+    
+    
+        if (humanExactMatches !== masterCode.length) {
+            currentGame.previousGuesses.push(`Guess: ${guess}, Exact Matches: ${parsedExactMatches}, Near Matches: ${parsedNearMatches}`);
+            currentGame.attemptsLeft -= 1;
+
+            if (currentGame.attemptsLeft === 0) {
+                res.json({
+                    message: 'You have won the game.'
+                });
+                user.score.wins += 1;
+                codeBreaker.send(JSON.stringify({
+                    type: 'sendResponse',
+                    payload: {
+                        message: 'You have lost the game',
+                    }
+                }))
+            } else {
+                const payload = {
+                    humanExactMatches,
+                    humanNearMatches, 
+                    attemptsLeft: currentGame.attemptsLeft,
+                }
+                res.json(payload);
+                codeBreaker.send(JSON.stringify({
+                    type: 'sendResponse',
+                    payload
+                }))
+            }
+        } else {
+            currentGame.completedGame = true;
+            await currentGame.save();
+            res.json({
+                message: 'You have lost the game!'
+            });
+            user.score.losses += 1;
+            codeBreaker.send(JSON.stringify({
+                type: 'sendResponse',
+                payload: {
+                    message: 'You have won the game!',
+                }
+            }))
+        };
+        await currentGame.save();
+        await user.save();
+    };
 };
 
 const alreadyGuessedCode = (guessStringArray, guess) => {
@@ -217,7 +288,7 @@ export const getMostRecentGame = async(req,res,next) => {
 export const getCurrentGame = async (req, res, next) => {
     const gameId = req.query.gameId;
     const game = await Game.findById(gameId);
-    const masterCodeLength = game.masterCode.length;
+    const masterCodeLength = game?.masterCode.length;
 
     
     if (game) {
@@ -234,7 +305,6 @@ export const getCurrentGame = async (req, res, next) => {
 };
 
 export const updateGameHistory = async (req, res, next) => {
-    console.log(req.body);
     const {gameId, sessionToken} = req.body;
 
     if (gameId && sessionToken) {
@@ -284,42 +354,4 @@ const computerAnalyzer = (
 ) => {
     return humanNearMatches === computerNearMatches 
         && humanExactMatches === computerExactMatches;
-};
-
-export const webSocketCodeMasterAnalyze = async (gameId, guess, sessionToken, humanExactMatches, humanNearMatches) => {
-    
-    const user = await User.findOne({sessionToken});
-    const game = await Game.findById(gameId);
-    const masterCode = game.masterCode;
-
-    if (game.attemptsLeft === 0 || !isValidGuess(guess, masterCode) || game.completedGame || game.previousGuesses.includes(guess)) {
-        return {
-            error: 'Could not check guess!'
-        };
-    };
-    
-    const computerExactMatches = numExactMatches(guess, masterCode);
-    const computerNearMatches = numNearMatches(guess, masterCode);
-    const comparator = computerAnalyzer(
-        humanNearMatches, humanExactMatches,
-        computerNearMatches,computerExactMatches
-    );
-
-    if (!comparator) {
-        return {
-            error: 'Human has analyzed incorrectly'
-        };
-    };
-
-
-    if (humanExactMatches !== masterCode.length) {
-        game.previousGuesses.push(guess);
-        game.attemptsLeft -= 1;
-        await game.save();
-        return {humanExactMatches, humanNearMatches};
-    } else {
-        game.completedGame = true;
-        await game.save();
-        return {message: 'You have won!'};
-    };
 };
