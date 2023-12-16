@@ -1,11 +1,8 @@
-import { createNewGame, endGameEarly, getCurrentGame } from "../../controllers/games.js";
 import { loginUser, createUser, getCurrentUser } from "../src/scripts/user.js";
 import { getGame, getMostRecentGame, startNewGame, checkGuess } from "./scripts/game.js";
-import Party from '../../Party.js';
-import User from "../../models/User.js";
 import { incomingMessage } from "./scripts/websockets.js";
 
-
+let socket;
 // Web Sockets Functions / Creation
 const newURIGenerator = () => {
     const loc = window.location
@@ -15,13 +12,12 @@ const newURIGenerator = () => {
     return newUri
 };
 
-let socket;
 
 const multiPlayerGameFunction = async (sessionToken) => {
     const newUri = newURIGenerator();
     socket = new WebSocket(newUri, sessionToken);
-
-    socket.addEventListener('message', incomingMessage)
+    
+    socket.addEventListener('message', incomingMessage);
 };
 
 
@@ -70,6 +66,8 @@ if (!sessionToken) {
     const userName = user.username;
 
     const loginInformationDiv = document.getElementById('logged-in-info');
+    const userInfo = document.getElementById('username');
+    userInfo.textContent = `Hello ${userName}`;
     loginInformationDiv.style.display = 'flex';
 
     const logoutButton = document.getElementById('logout-button');
@@ -121,6 +119,10 @@ if (!gameId && sessionToken ) {
     
     startMultiplayerGame.addEventListener('click', async (e) => {
         const codeLength = codeLengthInput.value === "" ? '4' : codeLengthInput.value;
+        const waitingMessage = document.getElementById('multiplayer-waiting-message');
+        waitingMessage.textContent = 'Waiting to start game...'
+        waitingMessage.style.display ='block';
+
         await multiPlayerGameFunction(sessionToken, codeLength);
     });
     
@@ -148,23 +150,27 @@ if (!gameId && sessionToken ) {
         previousGuessesList.appendChild(noGuesses);
     };
 
+    const errorMessage = document.createElement('p');
+    errorMessage.setAttribute('class', 'error-message');
+
     const guessForm = document.getElementById('guess-form');
     guessForm.style.display = 'flex';
     const guessInput = document.getElementById('guess-input');
 
     guessInput.setAttribute('placeholder', `Enter your ${masterCodeLength} digit guess between 1 & 6 here.`);
     
-    const submitGuessButton = document.getElementById('submit-guess-button');
     const nearMatchesElement = document.createElement('p');
     const exactMatchesElement = document.createElement('p');
     guessForm.append(nearMatchesElement);
     guessForm.append(exactMatchesElement);
-
-    const errorMessage = document.createElement('p');
-    errorMessage.setAttribute('class', 'error-message');
     guessForm.append(errorMessage);
-    
 
+    guessForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+
+    const submitGuessButton = document.getElementById('submit-guess-button');
+    
     submitGuessButton.addEventListener('click', async (event) => {
         event.preventDefault();
         const guess = guessInput.value;
@@ -174,14 +180,15 @@ if (!gameId && sessionToken ) {
             try {
                 const userGuess = await checkGuess(guess, sessionToken, game);
                 const {exactMatches,nearMatches} = userGuess;
-                exactMatchesElement.textContent = 'Exact matches: ' + exactMatches;
-                nearMatchesElement.textContent = 'Near matches: ' + nearMatches;
-                location.reload();
+                const previousGuessElement = document.createElement("li");
+                previousGuessElement.textContent = (nearMatches !== undefined &&  exactMatches !== undefined) ? `Guess: ${guess}, Exact Matches: ${exactMatches}, Near Matches: ${nearMatches}` : `Final Guess: ${guess}, you have completed the game!`;
+                previousGuessesList.appendChild(previousGuessElement);
+                errorMessage.textContent = "";
             } catch(error) {
                 errorMessage.textContent = error.message;
             }
         } else {
-            const partyId = localStorage.getItem('partyId')
+            const partyId = localStorage.getItem('partyId');
             
             socket.send(JSON.stringify({
                 type:'sendGuess',
@@ -191,9 +198,17 @@ if (!gameId && sessionToken ) {
                     sessionToken,
                     partyId
                 }
-            }))
+            }));
+
+            guessForm.style.display = 'none';
+            const multiplayerGameDiv = document.getElementById('multiplayer-game-div');
+            multiplayerGameDiv.style.display = 'block';
+            const waitingMessage = document.getElementById('waiting-message');
+            waitingMessage.textContent = 'Waiting for other player';
         };
-    });
+    }
+);
+    
 
     const endGameEarlyButton = document.getElementById('end-game-early-button');
     endGameEarlyButton.style.display = 'block';
@@ -215,3 +230,5 @@ if (!gameId && sessionToken ) {
     });
 };
 
+
+    

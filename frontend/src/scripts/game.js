@@ -17,6 +17,7 @@ export const startNewGame = async (sessionToken, codeLength, masterCode, partyId
         if (!res.ok) {
             return new Error('Faled to start the game');
         };
+
         const data = await res.json();
         const waitingMessage = document.getElementById('waiting-message');
         waitingMessage.textContent = 'Waiting for other player...';
@@ -39,7 +40,7 @@ export const getGame = async (gameId) => {
         throw new Error('could not find game');
     };
 
-    const data = res.json();
+    const data = await res.json();
     return data;
 };
 
@@ -70,6 +71,12 @@ export const checkGuess = async (guess, sessionToken, game, partyId, humanExactM
                 humanNearMatches,
             })
         });
+        if (!res.ok) {
+            const {error} = await res.json();
+            throw new Error(error);
+        }
+        const data = await res.json();
+        return data;
     } else {
         const res = await fetch('/api/games/checkguess', {
             method: 'POST',
@@ -82,15 +89,15 @@ export const checkGuess = async (guess, sessionToken, game, partyId, humanExactM
                 game,
             })
         });
+        if (!res.ok) {
+            const {error} = await res.json();
+            throw new Error(error);
+        }
+        const data = await res.json();
+        return data;
     }
     
-    if (!res.ok) {
-        const {error} = await res.json();
-        throw new Error(error);
-    }
 
-    const data = await res.json();
-    return data;
 };
 
 export const updateGameHistory = async (gameId, sessionToken) => {

@@ -20,8 +20,9 @@ Welcome to my mastermind project! I'm incredibly proud of this project and would
 ```cd frontend npm install```
 ```cd .. backend npm install```
 3. Run: ```npm run start``` from root directory
-4. Open ```http://localhost:3000``` in browser
-5. Play the game!
+4. Run: ```npm run watch``` from frontend directory
+5. Open ```http://localhost:3000``` in browser
+6. Play the game!
 
 ## Discussion
 
@@ -58,7 +59,7 @@ const server = app.listen(port, () => console.log(`Now listening on port ${port}
 const wss = new WebSocketServer({server});
 ```
 
-As you can see, I used a MongoDB database. I also used the MVC framework along with Mongoose to make easy use of reading and writing to my database. I designed it be to relational, through "references".
+As you can see, I used a MongoDB database. I also used the MVC framework along with Mongoose to make easy use of reading and writing to my database. I designed it be to non-relational, but has some sort of ownership through references.
 
 Here is an example of the game's model:
 ```JS
@@ -147,7 +148,7 @@ export const createNewGame = async (req, res, next) => {
 };
 ```
 
-After setting up the controller, I set up the routes. The routes are built the way they are because at any given moment, I wanted users to ONLY be able to look up their own issue and I saved their session token in the local storage so that was easy to look up and I didn't have to deal with any parameters in the URL / URI.
+After setting up the controller, I set up the routes. The routes are built the way they are because at any given moment, I wanted users to ONLY be able to look up their own information and I saved their session token in the local storage so that was easy to look up and I didn't have to deal with any parameters in the URL / URI.
 ```js
 gameRouter.post('/updategamehistory', updateGameHistory);
 gameRouter.get('/mostrecentgame', getMostRecentGame);

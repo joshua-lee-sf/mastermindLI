@@ -36,17 +36,18 @@
                 <button id="previous-game-button">Continue previous game</button>
                 <button id="multiplayer-button">Start multiplayer game</button>
             </div>
+            <p id="multiplayer-waiting-message"></p>
         </div>
         <div id="current-game-div" class="game-options">
             <h2>Current Game: 
                 <ul id ='previous-guess-list'>
                 </ul>
             </h2>
+            <form id="guess-form" class="game-options" hidden>
+                <input type="text" required="true" id="guess-input">
+                <button id="submit-guess-button">Submit Guess</button>
+            </form>
         </div>
-        <form id="guess-form" class="game-options" hidden>
-            <input type="text" required="true" id="guess-input">
-            <button id="submit-guess-button">Submit Guess</button>
-        </form>
         <button id="end-game-early-button" class="game-options" hidden>
             Stop current game
         </button>

@@ -1,4 +1,4 @@
-import { checkGuess, startNewGame, updateGameHistory } from "./game.js";
+import { checkGuess, getGame, startNewGame, updateGameHistory } from "./game.js";
 
 export const incomingMessage = (event) => {
     const parsedMessage = JSON.parse(event.data);
@@ -38,6 +38,10 @@ const partyCreated = (payload) => {
     const mastercodeInput = document.getElementById('mastercode-input');
     const submitMasterCodeButton = document.getElementById('submit-mastercode-button');
 
+    if (role) {
+        const  multiplayerWaitingMessage = document.getElementById('multiplayer-waiting-message');
+        multiplayerWaitingMessage.textContent = "";
+    }
 
     if (role === 'codeBreaker') {
         roleInformation.textContent = 'You are the Code Breaker';
@@ -61,7 +65,12 @@ const partyCreated = (payload) => {
                 localStorage.setItem('gameId', newGame.data); 
             };
 
-            await sendGameId();
+            const payload = {
+                type: 'sendGameId',
+                gameId: newGame.data
+            };
+
+            await sendGameId(payload);
         });
     };
 };
@@ -71,7 +80,26 @@ const sendGameId = async (payload) => {
     const sessionToken = localStorage.getItem('sessionToken');
     await updateGameHistory(gameId, sessionToken);
     localStorage.setItem('gameId', gameId);
-    location.reload();
+
+    const role = localStorage.getItem('role');
+    const currentGame = await getGame(gameId);
+    const {masterCodeLength} = currentGame
+
+
+    if (role === 'codeBreaker') {
+
+        const multiplayerGameDiv = document.getElementById('multiplayer-game-div');
+        multiplayerGameDiv.style.display = 'none';
+
+        const currentGameDiv = document.getElementById('current-game-div');
+        currentGameDiv.style.display = 'block';
+
+        const errorMessage = document.createElement('p');
+        errorMessage.setAttribute('class', 'error-message');
+    
+        displayPreviousGuessList(currentGame); 
+        showGuessForm(masterCodeLength, errorMessage);
+    };
 };
 
 const receiveGuess = async (payload) => {
@@ -100,6 +128,6 @@ const receiveGuess = async (payload) => {
 };
 
 const receiveResponse = async (payload) => {
-
+    
 }
 

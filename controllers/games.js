@@ -293,7 +293,7 @@ export const getCurrentGame = async (req, res, next) => {
     
     if (game) {
         const {completedGame, attemptsLeft, previousGuesses} = game
-        res.json({
+        await res.json({
             completedGame,
             attemptsLeft,
             previousGuesses,
