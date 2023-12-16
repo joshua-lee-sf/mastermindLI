@@ -126,3 +126,16 @@ body #guess-form .error-message {
   color: red;
   margin-top: 0.5rem;
 }
+body #multiplayer-game-div * {
+  margin: 1rem 0.5rem;
+}
+body #multiplayer-game-div input {
+  padding: 1.1rem;
+}
+body #multiplayer-game-div input {
+  display: block;
+  padding: 0.2rem;
+  width: 30rem;
+  height: 5rem;
+  text-wrap: wrap;
+}
