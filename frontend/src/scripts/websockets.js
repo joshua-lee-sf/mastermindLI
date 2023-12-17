@@ -237,15 +237,31 @@ multiplayerGuessForm.addEventListener('submit', async (e) => {
     const guess = currentGuessTextElement.textContent.slice(15);
     
     try {
-        await checkGuess(guess, sessionToken, gameId, partyId, exactMatchesValues, nearMatchesValues);
+        const result = await checkGuess(guess, sessionToken, gameId, partyId, exactMatchesValues, nearMatchesValues);
         
-        codeMasterDiv.style.display = 'none';
-        waitingMessage.textContent = "Waiting for other player response...";
-    
-        const codeInputValue = document.getElementById('guess-input');
-        codeInputValue.value = "";
-        nearMatchesInput.value = "";
-        exactMatchesInput.value = "";
+        if (result.message) {
+            const {message, game, user} = result;
+            const {wins, losses} = user.score;
+            const endSessionButton = document.getElementById('end-session-button');
+            endSessionButton.style.display = "block";
+            const winRecord = document.getElementById('win-record');
+            const lossRecord = document.getElementById('loss-record');
+            const statusElement = document.getElementById('status');
+
+            winRecord.textContent = "Wins: " + wins;
+            lossRecord.textContent = "Lost:" + losses;
+
+            statusElement.textContent = message.includes('won') ? "You are the winner!" : "You are the loser!"
+        } else {
+            codeMasterDiv.style.display = 'none';
+            waitingMessage.textContent = "Waiting for other player response...";
+        
+            const codeInputValue = document.getElementById('guess-input');
+            codeInputValue.value = "";
+            nearMatchesInput.value = "";
+            exactMatchesInput.value = "";
+        }
+
     } catch (error) {
         errorMessage.textContent = error.message;
         errorMessage.style.display = "block";
@@ -345,22 +361,21 @@ const receiveResult = async (payload) => {
     winRecord.textContent = "Wins: " + wins;
     lossRecord.textContent = "Lost:" + losses;
 
-    const playAgainButton = document.getElementById('play-again-button');
     const endSessionButton = document.getElementById('end-session-button');
-    playAgainButton.style.display = "block";
     endSessionButton.style.display = "block";
-}
+};
 
-const playAgainButton = document.getElementById('play-again-button');
 const endSessionButton = document.getElementById('end-session-button');
 playAgainButton.style.display = "none";
 endSessionButton.style.display = "none"
 
-playAgainButton.addEventListener('click', (e) => {
-    e.preventDefault();
-});
-
 endSessionButton.addEventListener('click', (e) => {
     e.preventDefault();
+    localStorage.removeItem('role');
+    localStorage.removeItem('gameId');
+    localStorage.removeItem('mastercode');
+    localStorage.removeItem('masterCodeLength');
+    localStorage.removeItem('partyId');
+    location.reload();
 });
 

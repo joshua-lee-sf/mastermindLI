@@ -146,6 +146,7 @@ export const checkGuess = async (req, res, next) => {
                     success: true,
                     game: currentGame._id,
                     message: 'Sorry you have lost the game',
+                    user
                 })
                 
             } else if (!currentGame.completedGame){

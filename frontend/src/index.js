@@ -25,8 +25,8 @@ const multiPlayerGameFunction = async (sessionToken) => {
 
 
 const sessionToken = localStorage.getItem('sessionToken');
-let userOptions = document.getElementById('nav-right');
-userOptions.hidden = 'false';
+const userOptions = document.getElementById('nav-right');
+userOptions.style.display = 'grid';
 
 const loginBUtton = document.getElementById('login-button');
 const createUserButton = document.getElementById('create-user-button');
@@ -59,11 +59,13 @@ loginBUtton.addEventListener('click', async (event) => {
 
 const usernameInput = document.getElementById('username-input');
 const passwordInput = document.getElementById('password-input');
+console.log(sessionToken);
 
 if (!sessionToken) {
 
     const loginField = document.getElementById('login-options');
     loginField.style.display = 'grid';
+    console.log(loginField)
 
     userOptions.appendChild(errorMessage);
 
