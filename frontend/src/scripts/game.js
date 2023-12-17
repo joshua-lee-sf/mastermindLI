@@ -1,5 +1,8 @@
 import { getCurrentGame } from "../../../controllers/games";
 
+const errorMessage = document.createElement('p');
+errorMessage.setAttribute('class', 'error-message');
+
 export const startNewGame = async (sessionToken, codeLength, masterCode, partyId) => {
     try{
         const res = await fetch('/api/games/newgame', {
@@ -30,7 +33,8 @@ export const startNewGame = async (sessionToken, codeLength, masterCode, partyId
         submitMasterCodeButtonElement.style.display = 'none';
         return data;
     } catch (err) {
-        console.error('Error', err.message);
+        document.body.appendChild(errorMessage);
+        errorMessage.textContent = err.message;
     };
 };
 
@@ -55,7 +59,7 @@ export const getMostRecentGame = async (sessionToken) => {
     return data;
 };
 
-export const checkGuess = async (guess, sessionToken, game, partyId, humanExactMatches, humanNearMatches) => {
+export const checkGuess = async (guess, sessionToken, game, partyId, humanExactMatch, humanNearMatch) => {
     if (partyId) {
         const res = await fetch('/api/games/checkguess', {
             method: 'POST',
@@ -67,8 +71,8 @@ export const checkGuess = async (guess, sessionToken, game, partyId, humanExactM
                 sessionToken,
                 game,
                 partyId,
-                humanExactMatches,
-                humanNearMatches,
+                humanExactMatch,
+                humanNearMatch,
             })
         });
         if (!res.ok) {
@@ -77,6 +81,7 @@ export const checkGuess = async (guess, sessionToken, game, partyId, humanExactM
         }
         const data = await res.json();
         return data;
+
     } else {
         const res = await fetch('/api/games/checkguess', {
             method: 'POST',
@@ -96,8 +101,6 @@ export const checkGuess = async (guess, sessionToken, game, partyId, humanExactM
         const data = await res.json();
         return data;
     }
-    
-
 };
 
 export const updateGameHistory = async (gameId, sessionToken) => {

@@ -51,7 +51,7 @@ export const getCurrentUser = async (sessionToken) => {
 export const updateUserScore = async (sessionToken, status) => {
     let res = await fetch('/api/users/updateuserscore', {
         method: 'POST',
-        header: {
+        headers: {
             'content-type': 'application/json'
         },
         body: JSON.stringify({

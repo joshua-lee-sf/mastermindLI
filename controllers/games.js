@@ -165,9 +165,9 @@ export const checkGuess = async (req, res, next) => {
         await currentGame.save();
         await user.save();
     } else {
-        const {humanNearMatches, humanExactMatches} = req.body;
-        const parsedExactMatches = parseInt(humanExactMatches);
-        const parsedNearMatches = parseInt(humanNearMatches);
+        const {humanNearMatch, humanExactMatch} = req.body;
+        const parsedExactMatch = parseInt(humanExactMatch);
+        const parsedNearMatch = parseInt(humanNearMatch);
 
         const {codeBreaker} = Party.parties[partyId];
 
@@ -180,7 +180,7 @@ export const checkGuess = async (req, res, next) => {
         const computerNearMatches = numNearMatches(guess, masterCode);
         
         const comparator = computerAnalyzer(
-            parsedNearMatches, parsedExactMatches,
+            parsedNearMatch, parsedExactMatch,
             computerNearMatches,computerExactMatches
         );
     
@@ -190,8 +190,8 @@ export const checkGuess = async (req, res, next) => {
         };
     
     
-        if (humanExactMatches !== masterCode.length) {
-            currentGame.previousGuesses.push(`Guess: ${guess}, Exact Matches: ${parsedExactMatches}, Near Matches: ${parsedNearMatches}`);
+        if (parsedExactMatch !== masterCode.length) {
+            currentGame.previousGuesses.push(`Guess: ${guess}, Exact Matches: ${parsedExactMatch}, Near Matches: ${parsedNearMatch}`);
             currentGame.attemptsLeft -= 1;
 
             if (currentGame.attemptsLeft === 0) {
@@ -205,11 +205,12 @@ export const checkGuess = async (req, res, next) => {
                     payload: {
                         status: 'lost',
                     }
-                }))
+                }));
+                
             } else {
                 const payload = {
-                    humanExactMatches,
-                    humanNearMatches, 
+                    humanExactMatch,
+                    humanNearMatch, 
                     attemptsLeft: currentGame.attemptsLeft,
                     gameId: currentGame.id,
                 }

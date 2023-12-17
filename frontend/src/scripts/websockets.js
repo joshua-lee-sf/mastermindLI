@@ -17,7 +17,7 @@ export const incomingMessage = (event) => {
         case 'sendGameId':
             sendGameId(parsedMessage.payload);
             break;
-        case 'sendGuess':
+        case 'sendGuessBackend':
             receiveGuess(parsedMessage.payload);
             break;
         case 'sendResponse':
@@ -30,6 +30,9 @@ export const incomingMessage = (event) => {
             console.log('Default case');
     };
 };
+
+const errorMessage = document.createElement('p');
+errorMessage.setAttribute('class', 'error-message');
 
 const partyCreated = (payload) => {
     const sessionToken = localStorage.getItem('sessionToken');
@@ -67,13 +70,12 @@ const partyCreated = (payload) => {
 
         submitMasterCodeButton.addEventListener('click', async (e) => {
             e.preventDefault();
-            const errorMessage = document.createElement('p');
-            errorMessage.setAttribute('class', 'error-message');
             multiplayerGameDiv.appendChild(errorMessage);
 
             if (!!mastercodeInput.value.match(/^[1-6]+$/)) {
                 errorMessage.style.display = "none";
                 localStorage.setItem('mastercode', mastercodeInput.value);
+                const masterCodeLength = mastercodeInput.value.length;
                 const newGame = await startNewGame(sessionToken, null, mastercodeInput.value, partyId);
     
                 if (newGame) {
@@ -82,23 +84,24 @@ const partyCreated = (payload) => {
     
                 const payload = {
                     type: 'sendGameId',
-                    gameId: newGame.data
+                    gameId: newGame.data,
+                    masterCodeLength
                 };
     
                 await sendGameId(payload);
             } else {
                 errorMessage.textContent = "Invalid mastercode. Please try again!"
             }
-
         });
     };
 };
 
 const sendGameId = async (payload) => {
-    const {gameId} = payload;
+    const {gameId, masterCodeLength} = payload;
     const sessionToken = localStorage.getItem('sessionToken');
     await updateGameHistory(gameId, sessionToken);
     localStorage.setItem('gameId', gameId);
+
 
     const role = localStorage.getItem('role');
     const currentGame = await getGame(gameId);
@@ -112,6 +115,7 @@ const sendGameId = async (payload) => {
         // enter code here for creating guess form and previous guesses etc.
         const currentGame = await getGame(gameId);
         const masterCodeLength = currentGame.masterCodeLength;
+        localStorage.setItem('masterCodeLength', masterCodeLength);
     
         const currentGameDiv = document.getElementById('current-game-div');
         currentGameDiv.style.display = 'flex';
@@ -131,9 +135,6 @@ const sendGameId = async (payload) => {
             noGuesses.textContent = 'No guesses yet. Please make a guess.';
             previousGuessesList.appendChild(noGuesses);
         };
-    
-        const errorMessage = document.createElement('p');
-        errorMessage.setAttribute('class', 'error-message');
     
         const guessForm = document.getElementById('guess-form');
         guessForm.style.display = 'flex';
@@ -188,7 +189,6 @@ const sendGameId = async (payload) => {
 
 const receiveGuess = async (payload) => {
     // only for codemaster
-
     const {
         guess, 
         gameId, 
@@ -212,26 +212,46 @@ const receiveGuess = async (payload) => {
     const currentGuessTextElement = document.getElementById('multiplayer-current-guess');
     currentGuessTextElement.textContent = "Current Guess: " + guess;
 
-    const multiplayerGuessForm = document.getElementById('multiplayer-guess-check');
+};
 
-    multiplayerGuessForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-    })
+const multiplayerGuessForm = document.getElementById('multiplayer-guess-check');
 
-    const submitResponseButton = document.getElementById('submit-multiplayer-response-button');
-
-    submitResponseButton.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const nearMatchesInput = document.getElementById('near-matches');
-        const exactMatchesInput = document.getElementById('exact-matches');    
-        const nearMatchesValues = parseInt(nearMatchesInput.value);
-        const exactMatchesValues = parseInt(exactMatchesInput.value);
-
-        await checkGuess(guess, sessionToken, gameId, partyId,exactMatchesValues, nearMatchesValues);
+multiplayerGuessForm.addEventListener('submit', async (e) => {
+    
+    e.preventDefault();
+    errorMessage.textContent = "";
+    const nearMatchesInput = document.getElementById('near-matches');
+    const exactMatchesInput = document.getElementById('exact-matches');
+    const sessionToken = localStorage.getItem('sessionToken');
+    const partyId = localStorage.getItem('partyId');
+    const gameId = localStorage.getItem('gameId');
+    
+    
+    const nearMatchesValues = parseInt(nearMatchesInput.value);
+    const exactMatchesValues = parseInt(exactMatchesInput.value);
+    
+    const codeMasterDiv = document.getElementById('codemaster-div');
+    const waitingMessage = document.getElementById('waiting-message');
+    
+    const currentGuessTextElement = document.getElementById('multiplayer-current-guess');
+    const guess = currentGuessTextElement.textContent.slice(15);
+    
+    try {
+        await checkGuess(guess, sessionToken, gameId, partyId, exactMatchesValues, nearMatchesValues);
+        
         codeMasterDiv.style.display = 'none';
         waitingMessage.textContent = "Waiting for other player response...";
-    });
-};
+    
+        const codeInputValue = document.getElementById('guess-input');
+        codeInputValue.value = "";
+        nearMatchesInput.value = "";
+        exactMatchesInput.value = "";
+    } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.style.display = "block";
+        multiplayerGuessForm.appendChild(errorMessage);
+    }
+});
 
 const receiveResponse = async (payload) => {
     // only for code breaker
@@ -255,13 +275,19 @@ const receiveResponse = async (payload) => {
     // Create the previous guess list
     const previousGuessList = document.getElementById('previous-guess-list');
     const previousGuessesArray = currentGame?.previousGuesses;
-
+    
+    
+    
+    if (previousGuessesArray.length === 1) {
+        const deleteThisElement = previousGuessList.querySelector('li');
+        previousGuessList.removeChild(deleteThisElement);
+    };
+    
     if (previousGuessesArray.length > 0) {
-        previousGuessesArray.forEach((previousGuess) => {
-            const previousGuessElement = document.createElement("li");
-            previousGuessElement.textContent = previousGuess;
-            previousGuessList.appendChild(previousGuessElement);
-        })
+        const previousGuessElement = document.createElement("li");
+        const previousGuess = previousGuessesArray[previousGuessesArray.length - 1];
+        previousGuessElement.textContent = previousGuess;
+        previousGuessList.append(previousGuessElement);
     } else {
         const noGuesses = document.createElement('li');
         noGuesses.textContent = 'No guesses yet. Please make a guess.';
@@ -301,6 +327,7 @@ const receiveResponse = async (payload) => {
 };
 
 const receiveResult = async (payload) => {
+    console.log(payload);
     const sessionToken = localStorage.getItem('sessionToken');
     const {status} = payload;
 
@@ -311,20 +338,29 @@ const receiveResult = async (payload) => {
     endGameDiv.style.display = "block";
 
     const winRecord = document.getElementById('win-record');
-    const lossRecord = documnet.getElementById('loss-record');
+    const lossRecord = document.getElementById('loss-record');
+    const statusElement = document.getElementById('status');
 
-    winRecord.textContent = wins;
-    lossRecord.textContent = losses;
+    statusElement.textContent = status === "won" ? "You are the winner!" : "You are the loser!";
+    winRecord.textContent = "Wins: " + wins;
+    lossRecord.textContent = "Lost:" + losses;
 
     const playAgainButton = document.getElementById('play-again-button');
     const endSessionButton = document.getElementById('end-session-button');
-
-    playAgainButton.addEventListener('click', (e) => {
-        e.preventDefault();
-    });
-
-    endSessionButton.addEventListener('click', (e) => {
-        e.preventDefault();
-    });
+    playAgainButton.style.display = "block";
+    endSessionButton.style.display = "block";
 }
+
+const playAgainButton = document.getElementById('play-again-button');
+const endSessionButton = document.getElementById('end-session-button');
+playAgainButton.style.display = "none";
+endSessionButton.style.display = "none"
+
+playAgainButton.addEventListener('click', (e) => {
+    e.preventDefault();
+});
+
+endSessionButton.addEventListener('click', (e) => {
+    e.preventDefault();
+});
 

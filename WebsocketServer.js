@@ -37,6 +37,7 @@ const echo = (ws, message) => {
 };
 
 const sendGuess = async (ws, payload) => {
+    
     if (typeof payload !== 'object') {
         ws.send(JSON.stringify({
             error: 'Not an object!'
@@ -53,7 +54,7 @@ const sendGuess = async (ws, payload) => {
     if (!game.players.includes(user.id)) game.players.push(user.id);
     
     codeMaster.send(JSON.stringify({
-        type: 'sendGuess',
+        type: 'sendGuessBackend',
         payload,
     }));
 };
