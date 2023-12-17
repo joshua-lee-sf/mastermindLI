@@ -58,15 +58,33 @@
             <button id="submit-mastercode-button">Submit Master Code</button>
             <div id="codemaster-div">
                 <p id="multiplayer-master-code"></p>
+                <p id="multiplayer-current-guess"></p>
                 <form id="multiplayer-guess-check">
                     <label>Near Matches:
-                        <input type="'text" id="near-matches">
+                        <input type="'text" id="near-matches" placeholder="Please input the amount of near matches">
                     </label>
-                    <label>Exact Matches
-                        <input type="text" id="exact-matches">
+                    <label>Exact Matches: 
+                        <input type="text" id="exact-matches" placeholder="Please input the amount of exact matches">
                     </label>
                     <button id="submit-multiplayer-response-button">Submit Response</button>
                 </form>
+            </div>
+            <div id="codebreaker-div">
+                <h2>Current Game: 
+                    <ul id ='multiplayer-previous-guess-list'>
+                    </ul>
+                </h2>
+                <form id="multiplayer-guess-form" class="game-options" hidden>
+                    <input type="text" required="true" id="multiplayer-guess-input">
+                    <button id="multiplayer-submit-guess-button">Submit Guess</button>
+                </form>
+            </div>
+            <div id="endgame-div">
+                <h3></h3>
+                <p id="win-record"></p>
+                <p id="loss-record"></p>
+                <button id="play-again-button">Play Again</button>
+                <button id="end-session-button">End Session</button>
             </div>
         </div>
     </body>

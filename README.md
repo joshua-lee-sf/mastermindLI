@@ -295,7 +295,6 @@ In this example, the client first establishes a connection with the server, the 
             const {exactMatches,nearMatches} = userGuess;
             exactMatchesElement.textContent = 'Exact matches: ' + exactMatches;
             nearMatchesElement.textContent = 'Near matches: ' + nearMatches;
-            location.reload();
         } catch(error) {
             errorMessage.textContent = error.message;
         }

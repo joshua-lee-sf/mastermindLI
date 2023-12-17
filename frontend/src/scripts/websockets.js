@@ -1,4 +1,6 @@
 import { checkGuess, getGame, startNewGame, updateGameHistory } from "./game.js";
+import { socket } from '../index.js';
+import { updateUserScore } from "./user.js";
 
 export const incomingMessage = (event) => {
     const parsedMessage = JSON.parse(event.data);
@@ -17,6 +19,12 @@ export const incomingMessage = (event) => {
             break;
         case 'sendGuess':
             receiveGuess(parsedMessage.payload);
+            break;
+        case 'sendResponse':
+            receiveResponse(parsedMessage.payload);
+            break;
+        case 'sendResult':
+            receiveResult(parsedMessage.payload);
             break;
         default:
             console.log('Default case');
@@ -59,18 +67,29 @@ const partyCreated = (payload) => {
 
         submitMasterCodeButton.addEventListener('click', async (e) => {
             e.preventDefault();
-            const newGame = await startNewGame(sessionToken, null, mastercodeInput.value, partyId);
+            const errorMessage = document.createElement('p');
+            errorMessage.setAttribute('class', 'error-message');
+            multiplayerGameDiv.appendChild(errorMessage);
 
-            if (newGame) {
-                localStorage.setItem('gameId', newGame.data); 
-            };
+            if (!!mastercodeInput.value.match(/^[1-6]+$/)) {
+                errorMessage.style.display = "none";
+                localStorage.setItem('mastercode', mastercodeInput.value);
+                const newGame = await startNewGame(sessionToken, null, mastercodeInput.value, partyId);
+    
+                if (newGame) {
+                    localStorage.setItem('gameId', newGame.data); 
+                };
+    
+                const payload = {
+                    type: 'sendGameId',
+                    gameId: newGame.data
+                };
+    
+                await sendGameId(payload);
+            } else {
+                errorMessage.textContent = "Invalid mastercode. Please try again!"
+            }
 
-            const payload = {
-                type: 'sendGameId',
-                gameId: newGame.data
-            };
-
-            await sendGameId(payload);
         });
     };
 };
@@ -83,26 +102,93 @@ const sendGameId = async (payload) => {
 
     const role = localStorage.getItem('role');
     const currentGame = await getGame(gameId);
-    const {masterCodeLength} = currentGame
 
 
     if (role === 'codeBreaker') {
 
         const multiplayerGameDiv = document.getElementById('multiplayer-game-div');
         multiplayerGameDiv.style.display = 'none';
-
+    
+        // enter code here for creating guess form and previous guesses etc.
+        const currentGame = await getGame(gameId);
+        const masterCodeLength = currentGame.masterCodeLength;
+    
         const currentGameDiv = document.getElementById('current-game-div');
-        currentGameDiv.style.display = 'block';
-
+        currentGameDiv.style.display = 'flex';
+    
+        const previousGuessesList = document.getElementById('previous-guess-list');
+        
+        const previousGuessesArray = currentGame?.previousGuesses;
+    
+        if (previousGuessesArray.length > 0) {
+            previousGuessesArray.forEach((previousGuess) => {
+                const previousGuessElement = document.createElement("li");
+                previousGuessElement.textContent = previousGuess;
+                previousGuessesList.appendChild(previousGuessElement);
+            })
+        } else {
+            const noGuesses = document.createElement('li');
+            noGuesses.textContent = 'No guesses yet. Please make a guess.';
+            previousGuessesList.appendChild(noGuesses);
+        };
+    
         const errorMessage = document.createElement('p');
         errorMessage.setAttribute('class', 'error-message');
     
-        displayPreviousGuessList(currentGame); 
-        showGuessForm(masterCodeLength, errorMessage);
+        const guessForm = document.getElementById('guess-form');
+        guessForm.style.display = 'flex';
+        const guessInput = document.getElementById('guess-input');
+    
+        guessInput.setAttribute('placeholder', `Enter your ${masterCodeLength} digit guess between 1 & 6 here.`);
+        
+        const nearMatchesElement = document.createElement('p');
+        const exactMatchesElement = document.createElement('p');
+        guessForm.append(nearMatchesElement);
+        guessForm.append(exactMatchesElement);
+        guessForm.append(errorMessage);
+    
+        // guessForm.addEventListener('submit', (event) => {
+        //     event.preventDefault();
+        // });
+    
+        // const submitGuessButton = document.getElementById('submit-guess-button');
+        
+        // submitGuessButton.addEventListener('click', async (event) => {
+        //     event.preventDefault();
+
+        //     const guess = guessInput.value;
+        //     const game = gameId;
+        //     const partyId = localStorage.getItem('partyId');
+        
+        //     if (guess.length !== masterCodeLength || !guess.match(/^[1-6]+$/)) {
+        //         errorMessage.textContent = "Invalid guess, please try again!";
+        //     } else {
+
+        //         socket.send(JSON.stringify({
+        //             type:'sendGuess',
+        //             payload: {
+        //                 guess, 
+        //                 gameId, 
+        //                 sessionToken,
+        //                 partyId
+        //             }
+        //         }));
+    
+        //         guessForm.style.display = 'none';
+        //         const multiplayerGameDiv = document.getElementById('multiplayer-game-div');
+        //         multiplayerGameDiv.style.display = 'block';
+        //         const waitingMessage = document.getElementById('waiting-message');
+        //         waitingMessage.textContent = 'Waiting for other player';
+        //     }
+            
+        // });
     };
 };
 
+
 const receiveGuess = async (payload) => {
+    // only for codemaster
+
     const {
         guess, 
         gameId, 
@@ -110,24 +196,135 @@ const receiveGuess = async (payload) => {
         partyId
     } = payload;
 
+    const game = await getGame(gameId);
+
+    const waitingMessage = document.getElementById('waiting-message');
+    waitingMessage.textContent = "";
+
     
     const codeMasterDiv = document.getElementById('codemaster-div');
     codeMasterDiv.style.display = 'block';
+    const masterCode = localStorage.getItem('mastercode');
 
-    const nearMatchesInput = document.getElementById('near-matches');
-    const exactMatchesInput = document.getElementById('exact-matches');
-    const nearMatchesValue = parseInt(nearMatchesInput.value);
-    const exactMatchesValue = parseInt(exactMatchesInput.value);
+    const masterCodeText = document.getElementById('multiplayer-master-code');
+    masterCodeText.textContent = "Mastercode: " + masterCode;
+
+    const currentGuessTextElement = document.getElementById('multiplayer-current-guess');
+    currentGuessTextElement.textContent = "Current Guess: " + guess;
+
+    const multiplayerGuessForm = document.getElementById('multiplayer-guess-check');
+
+    multiplayerGuessForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+    })
 
     const submitResponseButton = document.getElementById('submit-multiplayer-response-button');
 
     submitResponseButton.addEventListener('click', async (e) => {
         e.preventDefault();
-        await checkGuess(guess, sessionToken, gameId, partyId,exactMatchesValue, nearMatchesValue);
-    })
+        const nearMatchesInput = document.getElementById('near-matches');
+        const exactMatchesInput = document.getElementById('exact-matches');    
+        const nearMatchesValues = parseInt(nearMatchesInput.value);
+        const exactMatchesValues = parseInt(exactMatchesInput.value);
+
+        await checkGuess(guess, sessionToken, gameId, partyId,exactMatchesValues, nearMatchesValues);
+        codeMasterDiv.style.display = 'none';
+        waitingMessage.textContent = "Waiting for other player response...";
+    });
 };
 
 const receiveResponse = async (payload) => {
+    // only for code breaker
+
+    const currentGameDiv = document.getElementById('current-game-div');
+    const guessForm = document.getElementById('guess-form');
+    guessForm.style.display = "block";
+
+    const {
+        humanExactMatches, 
+        humanNearMatches, 
+        attemptsLeft,
+        gameId
+    } = payload;
+
+    const currentGame = await getGame(gameId);
+
+    const codeBreakerGameDiv = document.getElementById('codebreaker-div');
+    codeBreakerGameDiv.style.display = 'block';
+
+    // Create the previous guess list
+    const previousGuessList = document.getElementById('previous-guess-list');
+    const previousGuessesArray = currentGame?.previousGuesses;
+
+    if (previousGuessesArray.length > 0) {
+        previousGuessesArray.forEach((previousGuess) => {
+            const previousGuessElement = document.createElement("li");
+            previousGuessElement.textContent = previousGuess;
+            previousGuessList.appendChild(previousGuessElement);
+        })
+    } else {
+        const noGuesses = document.createElement('li');
+        noGuesses.textContent = 'No guesses yet. Please make a guess.';
+        previousGuessList.appendChild(noGuesses);
+    };
+
+    // const multiplayerGuessForm = document.getElementById('multiplayer-guess-form');
+    // multiplayerGuessForm.style.display = "block";
     
+    // multiplayerGuessForm.addEventListener('onsubmit', (e) => {
+    //     e.preventDefault()
+    // })
+
+    // const multiplayerSubmitGuessButton = document.getElementById('multiplayer-submit-guess-button');
+
+    // multiplayerSubmitGuessButton.addEventListener('click', (event) => {
+    //     event.preventDefault();
+
+    //     const partyId = localStorage.getItem('partyId');
+            
+    //     socket.send(JSON.stringify({
+    //         type:'sendGuess',
+    //         payload: {
+    //             guess, 
+    //             gameId, 
+    //             sessionToken,
+    //             partyId
+    //         }
+    //     }));
+
+    //     guessForm.style.display = 'none';
+    //     const multiplayerGameDiv = document.getElementById('multiplayer-game-div');
+    //     multiplayerGameDiv.style.display = 'block';
+    //     const waitingMessage = document.getElementById('waiting-message');
+    //     waitingMessage.textContent = 'Waiting for other player...';
+    // })
+};
+
+const receiveResult = async (payload) => {
+    const sessionToken = localStorage.getItem('sessionToken');
+    const {status} = payload;
+
+    const result = await updateUserScore(sessionToken, status);
+    const {wins, losses} = result.score
+
+    const endGameDiv = document.getElementById('endgame-div');
+    endGameDiv.style.display = "block";
+
+    const winRecord = document.getElementById('win-record');
+    const lossRecord = documnet.getElementById('loss-record');
+
+    winRecord.textContent = wins;
+    lossRecord.textContent = losses;
+
+    const playAgainButton = document.getElementById('play-again-button');
+    const endSessionButton = document.getElementById('end-session-button');
+
+    playAgainButton.addEventListener('click', (e) => {
+        e.preventDefault();
+    });
+
+    endSessionButton.addEventListener('click', (e) => {
+        e.preventDefault();
+    });
 }
 

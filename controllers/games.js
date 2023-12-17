@@ -147,6 +147,7 @@ export const checkGuess = async (req, res, next) => {
                     game: currentGame._id,
                     message: 'Sorry you have lost the game',
                 })
+                
             } else if (!currentGame.completedGame){
                 res.status(200).json({
                     success:true,
@@ -198,10 +199,11 @@ export const checkGuess = async (req, res, next) => {
                     message: 'You have won the game.'
                 });
                 user.score.wins += 1;
+                
                 codeBreaker.send(JSON.stringify({
-                    type: 'sendResponse',
+                    type: 'sendResult',
                     payload: {
-                        message: 'You have lost the game',
+                        status: 'lost',
                     }
                 }))
             } else {
@@ -209,8 +211,10 @@ export const checkGuess = async (req, res, next) => {
                     humanExactMatches,
                     humanNearMatches, 
                     attemptsLeft: currentGame.attemptsLeft,
+                    gameId: currentGame.id,
                 }
                 res.json(payload);
+                
                 codeBreaker.send(JSON.stringify({
                     type: 'sendResponse',
                     payload
@@ -219,14 +223,16 @@ export const checkGuess = async (req, res, next) => {
         } else {
             currentGame.completedGame = true;
             await currentGame.save();
+            
             res.json({
                 message: 'You have lost the game!'
             });
             user.score.losses += 1;
+
             codeBreaker.send(JSON.stringify({
-                type: 'sendResponse',
+                type: 'sendResult',
                 payload: {
-                    message: 'You have won the game!',
+                    status: 'won',
                 }
             }))
         };
@@ -286,21 +292,25 @@ export const getMostRecentGame = async(req,res,next) => {
 };
 
 export const getCurrentGame = async (req, res, next) => {
-    const gameId = req.query.gameId;
-    const game = await Game.findById(gameId);
-    const masterCodeLength = game?.masterCode.length;
-
+    try{
+        const gameId = req.query.gameId;
+        const game = await Game.findById(gameId);
+        const masterCodeLength = game?.masterCode.length;
     
-    if (game) {
-        const {completedGame, attemptsLeft, previousGuesses} = game
-        await res.json({
-            completedGame,
-            attemptsLeft,
-            previousGuesses,
-            masterCodeLength
-        });
-    } else {
-        next(new Error ('Could not continue game'));
+        
+        if (game) {
+            const {completedGame, attemptsLeft, previousGuesses} = game
+            await res.json({
+                completedGame,
+                attemptsLeft,
+                previousGuesses,
+                masterCodeLength,
+            });
+        } else {
+            next(new Error ('Could not continue game'));
+        }
+    } catch (err) {
+        console.log(err.message);
     }
 };
 
@@ -319,7 +329,7 @@ export const updateGameHistory = async (req, res, next) => {
     
         const masterCodeLength = game.masterCode.length
     
-        res.json({
+        await res.json({
             ..._.pick(game, ['completedGame', 'previousGuesses', 'attemptsLeft']),
             masterCodeLength,
         });
@@ -327,6 +337,8 @@ export const updateGameHistory = async (req, res, next) => {
         next (new Error ('Could not update game'));
     }
 };
+
+
 
 export const getAllGames = async (req, res, next) => {
     const user = await getCurrentUser(req.body.sessionToken);

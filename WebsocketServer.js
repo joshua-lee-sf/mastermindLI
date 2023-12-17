@@ -1,3 +1,4 @@
+import Game from './models/Game.js';
 import Party from './Party.js';
 import User from './models/User.js';
 
@@ -17,9 +18,6 @@ export const incomingMessage = (ws, message) => {
             break;
         case 'sendGuess':
             sendGuess(ws, parsedMessage.payload);
-            break;
-        case 'checkGuess':
-            checkGuess(ws, parsedMessage.payload);
             break;
         case 'notifyCodeMaster':
             notifyCodeMaster(ws);
@@ -47,7 +45,7 @@ const sendGuess = async (ws, payload) => {
 
     const {guess, gameId, sessionToken, partyId} = payload;
 
-    const game = await game.findById(gameId);
+    const game = await Game.findById(gameId);
     const user = await User.findOne({sessionToken});
 
     const {codeMaster} = Party.parties[partyId];
@@ -56,9 +54,7 @@ const sendGuess = async (ws, payload) => {
     
     codeMaster.send(JSON.stringify({
         type: 'sendGuess',
-        payload: {
-            guess
-        }
+        payload,
     }));
 };
 

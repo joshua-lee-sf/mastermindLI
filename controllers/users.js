@@ -67,3 +67,21 @@ export const getCurrentUser = async (req, res, next) => {
     };
 };
 
+export const updateUserScore = async (req, res, next) => {
+    const {sessionToken, status} = req.body;
+
+    if (sessionToken) {
+
+        const user = await User.findOne({sessionToken});
+
+        status === "won" ? user.score.wins += 1 : user.score.losses += 1;
+
+        await user.save();
+        
+        await res.json({
+            score: user.score
+        });
+    } else {
+        next (new Error ('Could not update game'));
+    }
+};

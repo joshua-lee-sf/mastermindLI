@@ -47,3 +47,23 @@ export const getCurrentUser = async (sessionToken) => {
     let data = await res.json();
     return data
 };
+
+export const updateUserScore = async (sessionToken, status) => {
+    let res = await fetch('/api/users/updateuserscore', {
+        method: 'POST',
+        header: {
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            sessionToken,
+            status,
+        })
+    })
+
+    if (!res.ok) {
+        throw new Error (await res.json());
+    }
+
+    let data = await res.json();
+    return data;
+};
