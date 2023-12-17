@@ -27,7 +27,11 @@ Welcome to my mastermind project! I'm incredibly proud of this project and would
 
 ## Discussion
 
-Building this game was relatively simple, until it came to websockets. The Backend was built with a simple Express server. If you're reading through each of the code snippets, I also added comments into the lines of code that I think are important. Please make sure to read them as I add further explanation in them.
+Building this game was relatively straight forward, until it came to websockets. The Backend was built with an Express server. Sessions were handled using Express Sessions and localStorage within the Client itself.
+
+If you're reading through each of the code snippets, I also added comments into the lines of code that I think are important.
+
+Let's go ahead and get started!
 
 Here's a snippet of the Express server:
 ```js
@@ -193,7 +197,7 @@ export const startNewGame = async (sessionToken, codeLength, masterCode, partyId
 };
 ```
 
-For the single player aspect of the game, I used regular HTTP methods / requests and their protocols. Users would send a request and the server would send a response. The client would then display information depending on what the response was.
+For the single player aspect of the game, I used regular HTTP methods / requests. Users would send a request and the server would send a response. The client would then display information depending on what the response was.
 
 Here is a request function to the server.
 ```js
