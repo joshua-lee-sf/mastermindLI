@@ -18,7 +18,7 @@ Welcome to my mastermind project! I'm incredibly proud of this project and would
 1. Clone this repo: ``` git clone https://github.com/joshua-lee-sf/mastermindLI.git```
 2. Install dependencies for both frontend and backend directories: 
 ```cd frontend npm install```
-```cd .. backend npm install``
+```cd .. backend npm install```
 3. [Create a Mongo Database](https://www.mongodb.com/basics/create-database#:~:text=Collections%20can%20be%20created%20just,you%20will%20see%20your%20database.) and then set up a ```.env``` file adding your [MongoURI](https://www.mongodb.com/basics/mongodb-connection-string#:~:text=The%20MongoDB%20connection%20string%20for,port%20number%20you%20are%20using.).
 4. Run: ```npm run start``` from root directory
 5. Run: ```npm run watch``` from frontend directory
