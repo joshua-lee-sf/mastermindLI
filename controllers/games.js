@@ -64,41 +64,41 @@ export const createNewGame = async (req, res, next) => {
     const {codeLength, masterCode, partyId} = req.body;
     
     if (user) {
-        const newGame = new Game({
-            completedGame: false,
-            masterCode: masterCode ?? await createMasterCode(codeLength),
-            players: [user.id],
-            previousGuesses: [],
-            attemptsLeft: 10,
-        });
-
-        if (newGame) {
-            await newGame.save();
-            user.gameHistory.push(newGame.id);
-            await user.save();
-
-            if (partyId) {
-                const {codeBreaker} = Party.parties[partyId];
-
-                codeBreaker.send(JSON.stringify({
-                    type: 'sendGameId',
-                    payload: {
-                        gameId: newGame.id,
-                    },
-                }))
-            };
-            res.status(200).json({
-                success: true,
-                data: newGame.id,
+        try {
+            const newGame = new Game({
+                completedGame: false,
+                masterCode: masterCode ?? await createMasterCode(codeLength),
+                players: [user.id],
+                previousGuesses: [],
+                attemptsLeft: 10,
             });
-        } else {
-            next(new Error('Unable to create Game'));
+    
+            if (newGame) {
+                await newGame.save();
+                user.gameHistory.push(newGame.id);
+                await user.save();
+    
+                if (partyId) {
+                    const {codeBreaker} = Party.parties[partyId];
+    
+                    codeBreaker.send(JSON.stringify({
+                        type: 'sendGameId',
+                        payload: {
+                            gameId: newGame.id,
+                        },
+                    }))
+                };
+                res.status(200).json({
+                    success: true,
+                    data: newGame.id,
+                });
+            }    
         }
-    } else {
-        next(new Error('Unable to locate user'));
-    };
-};
-
+        catch (error) {
+            next(new Error (error));
+        }
+    }
+}
 export const checkGuess = async (req, res, next) => {
     const {guess, sessionToken, game, partyId} = req.body;
     const user = await User.findOne({sessionToken});
@@ -131,7 +131,8 @@ export const checkGuess = async (req, res, next) => {
     
                 res.status(200).send({
                     message: 'You have won the game!',
-                    game: currentGame
+                    game: currentGame,
+                    user
                 });
             }
             
@@ -146,7 +147,7 @@ export const checkGuess = async (req, res, next) => {
                     success: true,
                     game: currentGame._id,
                     message: 'Sorry you have lost the game',
-                    user
+                    user,
                 })
                 
             } else if (!currentGame.completedGame){
@@ -197,7 +198,8 @@ export const checkGuess = async (req, res, next) => {
 
             if (currentGame.attemptsLeft === 0) {
                 res.json({
-                    message: 'You have won the game.'
+                    message: 'You have won the game.',
+                    user
                 });
                 user.score.wins += 1;
                 
@@ -227,7 +229,8 @@ export const checkGuess = async (req, res, next) => {
             await currentGame.save();
             
             res.json({
-                message: 'You have lost the game!'
+                message: 'You have lost the game!',
+                user
             });
             user.score.losses += 1;
 

@@ -7,6 +7,12 @@ body{
         cursor: pointer;
     }
 
+    .error-message{
+        color: red;
+        margin-top: 0.5rem;
+
+    }
+
     header{
         display: flex;
         justify-content: space-around;
@@ -81,11 +87,6 @@ body{
             margin-top: 1rem;
             width: 15rem;
             height: 2rem;
-        }
-
-        .error-message {
-            color: red;
-            margin-top: 0.5rem;
         }
     }
 

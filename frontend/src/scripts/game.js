@@ -1,5 +1,3 @@
-import { getCurrentGame } from "../../../controllers/games";
-
 const errorMessage = document.createElement('p');
 errorMessage.setAttribute('class', 'error-message');
 

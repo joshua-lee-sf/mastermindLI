@@ -7,7 +7,7 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge" />
         <link rel="stylesheet" href="./dist/main.css" />
         <script src="./dist/main.js" defer></script>
-        <title>Project Name</title>
+        <title>Mastermind </title>
     </head>
 
     <body>
@@ -29,7 +29,7 @@
 
         <div id="game-options-div">
             <label id="code-label">Code Length: 
-                <input id="code-input" type="text" placeholder="default = 4">
+                <input id="code-input" type="number" placeholder="default = 4">
             </label>
             <div id="button-div">
                 <button id="computer-button">Play against computer</button>
@@ -44,7 +44,7 @@
                 </ul>
             </h2>
             <form id="guess-form" class="game-options" hidden>
-                <input type="text" required="true" id="guess-input">
+                <input type="number" required="true" id="guess-input">
                 <button id="submit-guess-button">Submit Guess</button>
             </form>
         </div>
@@ -54,17 +54,17 @@
         <div id="multiplayer-game-div">
             <p id="role-assignment"></p>
             <p id="waiting-message"></p>
-            <input type="text" id="mastercode-input">
+            <input type="number" id="mastercode-input">
             <button id="submit-mastercode-button">Submit Master Code</button>
             <div id="codemaster-div">
                 <p id="multiplayer-master-code"></p>
                 <p id="multiplayer-current-guess"></p>
                 <form id="multiplayer-guess-check">
                     <label>Near Matches:
-                        <input type="'text" id="near-matches" placeholder="Please input the amount of near matches">
+                        <input type="'number" id="near-matches" placeholder="Please input the amount of near matches">
                     </label>
                     <label>Exact Matches: 
-                        <input type="text" id="exact-matches" placeholder="Please input the amount of exact matches">
+                        <input type="number" id="exact-matches" placeholder="Please input the amount of exact matches">
                     </label>
                     <button id="submit-multiplayer-response-button">Submit Response</button>
                 </form>
@@ -75,7 +75,7 @@
                     </ul>
                 </h2>
                 <form id="multiplayer-guess-form" class="game-options" hidden>
-                    <input type="text" required="true" id="multiplayer-guess-input">
+                    <input type="number" required="true" id="multiplayer-guess-input">
                     <button id="multiplayer-submit-guess-button">Submit Guess</button>
                 </form>
             </div>
@@ -83,7 +83,6 @@
                 <h3 id="status"></h3>
                 <p id="win-record"></p>
                 <p id="loss-record"></p>
-                <button id="play-again-button">Play Again</button>
                 <button id="end-session-button">End Session</button>
             </div>
         </div>
