@@ -63,7 +63,6 @@ if (!sessionToken) {
 
     const loginField = document.getElementById('login-options');
     loginField.style.display = 'grid';
-    console.log(loginField)
 
     userOptions.appendChild(errorMessage);
 
@@ -106,7 +105,6 @@ const startMultiplayerGame = document.getElementById('multiplayer-button');
 startSinglePlayerGameButton.addEventListener('click', async (event) => {
     event.preventDefault();
     const codeLength = codeLengthInput.value === "" ? '4' : codeLengthInput.value ;
-    console.log(codeLength);
     const game = await startNewGame(sessionToken, codeLength, null);
     localStorage.setItem('gameId', game?.data);
     const gameId = game?.data
@@ -154,7 +152,6 @@ if (!gameId && sessionToken ) {
     buttonDiv.style.display = 'flex';
     
 } else if (sessionToken && gameId && role !== 'codeMaster') {
-    // do something
     const currentGame = await getGame(gameId);
     const masterCodeLength = currentGame.masterCodeLength;
 
@@ -202,7 +199,6 @@ if (!gameId && sessionToken ) {
         if (gameId) {
             localStorage.removeItem('gameId');
         }
-        console.log('Clicking button');
         location.reload();
     });
 };
@@ -276,7 +272,6 @@ endGameEarlyButton.addEventListener('click', (e) => {
     if (gameId) {
         localStorage.removeItem('gameId');
     }
-    console.log('Clicking button');
     location.reload();
 });
 

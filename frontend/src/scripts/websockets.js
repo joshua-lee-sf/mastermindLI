@@ -109,7 +109,6 @@ const sendGameId = async (payload) => {
         const multiplayerGameDiv = document.getElementById('multiplayer-game-div');
         multiplayerGameDiv.style.display = 'none';
     
-        // enter code here for creating guess form and previous guesses etc.
         const currentGame = await getGame(gameId);
         const masterCodeLength = currentGame.masterCodeLength;
         localStorage.setItem('masterCodeLength', masterCodeLength);
@@ -149,7 +148,6 @@ const sendGameId = async (payload) => {
 
 
 const receiveGuess = async (payload) => {
-    // only for codemaster
     const {
         guess, 
         gameId, 
@@ -238,7 +236,6 @@ multiplayerGuessForm.addEventListener('submit', async (e) => {
 });
 
 const receiveResponse = async (payload) => {
-    // only for code breaker
 
     const currentGameDiv = document.getElementById('current-game-div');
     const guessForm = document.getElementById('guess-form');

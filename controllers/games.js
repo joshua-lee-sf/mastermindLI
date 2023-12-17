@@ -315,7 +315,7 @@ export const getCurrentGame = async (req, res, next) => {
             next(new Error ('Could not continue game'));
         }
     } catch (err) {
-        console.log(err.message);
+        console.error(err.message);
     }
 };
 
