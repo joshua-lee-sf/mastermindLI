@@ -24,6 +24,10 @@ Welcome to my mastermind project! I'm incredibly proud of this project and would
 5. Run: ```npm run watch``` from frontend directory
 6. Open ```http://localhost:3000``` in browser
 7. Play the game!
+    + a. I have accounts created please user them. They are in username:password format or create your own.
+        * usertest:password
+        * testuser:password
+    + b. To use the multiplayer aspect, open another incognito window and log onto ```http://localhost:3000``` and click "Start New Multiplayer Game".
 
 ## Discussion
 
